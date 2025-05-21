@@ -13,7 +13,7 @@ This application provides a user-friendly graphical interface to create ISO file
 - **Folder Selection**: Browse button for selecting the destination folder.
 - **ISO Creation**: Generates ISO files using the IMAPI2FS COM object, including only the selected files.
 - **Input Validation**: Ensures all required fields are filled, source files exist, and the ISO is not empty.
-- **Logging**: All actions, including file copying and ISO creation, are logged to a `guiPS.log` file.
+- **Logging**: All actions, including file copying and ISO creation, are logged to `H:\Personal\Code\Logs\guiPS.log`.
 - **Temporary Directory**: Uses a temporary directory to stage files, ensuring reliable inclusion in the ISO.
 
 ## Prerequisites
@@ -21,13 +21,14 @@ This application provides a user-friendly graphical interface to create ISO file
 - Windows 10 or Windows 11
 - PowerShell 5.1 or later
 - .NET Framework (included with Windows)
-- Write permissions in the temporary directory (`$env:TEMP`)
+- Write permissions in `H:\Personal\Code\Logs` and the temporary directory (`$env:TEMP`)
 
 ## Installation
 
 1. Clone or download this repository.
 2. Ensure PowerShell is installed on your system.
 3. Place the `CreateISO.ps1` script in a directory of your choice.
+4. Ensure the `H:\Personal\Code\Logs` directory is accessible and writable.
 
 ## Usage
 
@@ -49,7 +50,7 @@ This application provides a user-friendly graphical interface to create ISO file
 
 ## Logging
 
-All actions (e.g., button clicks, file selections, file copying, ISO creation, and errors) are logged to `guiPS.log` in the same directory as the script.
+All actions (e.g., button clicks, file selections, file copying, ISO creation, and errors) are logged to `H:\Personal\Code\Logs\guiPS.log`.
 
 ## License
 
