@@ -10,7 +10,7 @@ The ISO Creator GUI is a PowerShell-based application that allows users to creat
 
 - Windows 10 or Windows 11
 - PowerShell 5.1 or later
-- Write permissions for the destination folder and temporary directory (`$env:TEMP`)
+- Write permissions for the destination folder, `H:\Personal\Code\Logs`, and temporary directory (`$env:TEMP`)
 - Sufficient disk space for the ISO file and temporary storage
 
 ## Getting Started
@@ -80,7 +80,8 @@ The GUI consists of:
 
 ## Checking the Log
 
-- The application logs all actions to `guiPS.log` in the same directory as `CreateISO.ps1`.
+- The application logs all actions to `H:\Personal\Code\Logs\guiPS.log`.
+- The log directory is automatically created if it does not exist.
 - Open the log file in a text editor to review actions, such as button clicks, file selections, file copying, ISO creation, and any errors.
 
 ## Troubleshooting
@@ -89,7 +90,7 @@ The GUI consists of:
   - Verify that the selected files exist and are accessible.
   - Reselect the files using the "Browse" button.
 - **Error: "Created ISO file is empty..."**:
-  - Check the `guiPS.log` file for details on file copying or ISO creation errors.
+  - Check the `H:\Personal\Code\Logs\guiPS.log` file for details on file copying or ISO creation errors.
   - Ensure the selected files are not locked by another process.
   - Try selecting different files or a different destination path.
 - **Error: "Cannot create file..."**:
@@ -101,9 +102,9 @@ The GUI consists of:
     Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
     ```
   - Run PowerShell as administrator if issues persist.
-- **Temporary Directory Issues**:
-  - Ensure write permissions in `$env:TEMP`.
-  - Check the log for errors related to file copying.
+- **Logging Issues**:
+  - Ensure write permissions in `H:\Personal\Code\Logs`.
+  - Check the log for errors related to file copying or ISO creation.
 
 ## Support
 
