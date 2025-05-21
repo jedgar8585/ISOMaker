@@ -2,7 +2,12 @@
 # PowerShell script to create a GUI for generating ISO files from selected files
 
 # Initialize logging
-$LogFile = Join-Path $PSScriptRoot "guiPS.log"
+$LogDir = "H:\Personal\Code\Logs"
+$LogFile = Join-Path $LogDir "guiPS.log"
+# Ensure log directory exists
+if (-not (Test-Path -Path $LogDir -PathType Container)) {
+    New-Item -Path $LogDir -ItemType Directory -Force | Out-Null
+}
 function Write-Log {
     param([string]$Message)
     $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
