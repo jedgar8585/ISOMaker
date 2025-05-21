@@ -1,35 +1,56 @@
-# ISO Creator
+# ISO Creator GUI
+
+A PowerShell-based GUI application for creating ISO files that are mountable on Windows 11 systems.
 
 ## Overview
-ISO Creator GUI is a PowerShell-based application that provides a graphical user interface for creating ISO image files from a specified source file. The application allows users to select a source file, specify a destination folder, and provide a filename for the resulting ISO file.
+
+This application provides a user-friendly graphical interface to create ISO files from one or more selected files. Users can select source files, choose a destination folder, and specify an output ISO file name. The application stages selected files in a temporary directory and uses the `New-IsoFile` function to generate ISO images compatible with Windows 11, ensuring only the selected files are included.
 
 ## Features
-- Simple Windows Forms GUI
-- Input fields for source file, destination folder, and output filename
-- Browse buttons for easy file and folder selection
-- Create ISO button to generate the ISO file
-- Exit button to close the application
-- Basic input validation
-- Error handling with user-friendly message boxes
+
+- **Graphical Interface**: Simple and intuitive GUI built with Windows Forms.
+- **Multiple File Selection**: Select one or more files to include in the ISO using the "Browse" button.
+- **Folder Selection**: Browse button for selecting the destination folder.
+- **ISO Creation**: Generates ISO files using the IMAPI2FS COM object, including only the selected files.
+- **Input Validation**: Ensures all required fields are filled, source files exist, and the ISO is not empty.
+- **Logging**: All actions, including file copying and ISO creation, are logged to a `guiPS.log` file.
+- **Temporary Directory**: Uses a temporary directory to stage files, ensuring reliable inclusion in the ISO.
 
 ## Prerequisites
-- Windows operating system
+
+- Windows 10 or Windows 11
 - PowerShell 5.1 or later
 - .NET Framework (included with Windows)
+- Write permissions in the temporary directory (`$env:TEMP`)
 
 ## Installation
-1. Save the `Create-ISO.ps1` script to a desired location
-2. Ensure PowerShell execution policy allows running scripts (`Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`)
+
+1. Clone or download this repository.
+2. Ensure PowerShell is installed on your system.
+3. Place the `CreateISO.ps1` script in a directory of your choice.
 
 ## Usage
-Run the script in PowerShell:
-```powershell
-.\Create-ISO.ps1
-```
-See USERS_GUIDE.md for detailed usage instructions.
 
-## Contributing
-See DEVELOPERS.md for technical details and contribution guidelines.
+1. Run the `CreateISO.ps1` script in PowerShell:
+   ```powershell
+   .\CreateISO.ps1
+   ```
+2. Use the GUI to:
+   - Select one or more source files using the "Browse" button (hold Ctrl to select multiple files).
+   - Choose a destination folder using the "Browse" button.
+   - Enter a file name for the ISO (defaults to `output.iso`).
+   - Click "Create ISO" to generate the ISO file.
+   - Click "Exit" to close the application.
+
+## Documentation
+
+- **User Guide**: See `user_guide.md` for detailed instructions on using the application.
+- **Developer Guide**: See `developers.md` for technical details about the script.
+
+## Logging
+
+All actions (e.g., button clicks, file selections, file copying, ISO creation, and errors) are logged to `guiPS.log` in the same directory as the script.
 
 ## License
+
 MIT License
