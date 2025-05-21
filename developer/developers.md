@@ -1,96 +1,361 @@
-# ISO Creator GUI - Developer Documentation
+# ISO Creator GUI Developer Guide
+
+This document provides detailed technical information about the `CreateISO.ps1` PowerShell script for developers who want to understand, modify, or extend the application.
 
 ## Overview
-The ISO Creator GUI is a PowerShell script (`Create-ISO.ps1`) that uses Windows Forms to create a graphical interface for generating ISO image files. This document provides a detailed source-level explanation of the application's structure and implementation.
 
-## Source Code Structure
+The ISO Creator GUI is a PowerShell script that uses Windows Forms to create a graphical interface for generating ISO files from one or more selected files. It stages the selected files in a temporary directory and uses the `New-IsoFile` function to create ISO images compatible with Windows 11 using the IMAPI2FS COM object.
 
-### Dependencies
-- **System.Windows.Forms**: Provides GUI components
-- **System.Drawing**: Handles form sizing and positioning
-- Both loaded via `Add-Type` at script start
+## Script Structure
 
-### Main Components
+### Key Components
 
-1. **Form Setup**
-```powershell
-$form = New-Object System.Windows.Forms.Form
-$form.Text = "Create ISO Image"
-$form.Size = New-Object System.Drawing.Size(500,300)
-$form.StartPosition = "CenterScreen"
-$form.FormBorderStyle = "FixedSingle"
-$form.MaximizeBox = $false
-```
-- Creates a fixed-size (500x300) window
-- Centers on screen
-- Disables maximize to maintain consistent layout
+1. **Logging Function**:
+   - `Write-Log`: Writes timestamped messages to `guiPS.log` in the script's directory.
+   - Usage: `Write-Log "Message"`
+   - File path: Determined by `Join-Path $PSScriptRoot "guiPS.log"`
 
-2. **UI Elements**
-- **Labels** (3): Source Path, Destination, File Name
-  - Created using `System.Windows.Forms.Label`
-  - Positioned at (20,Y) with 80x20 size
-- **Text Boxes** (3): Input fields for source, destination, filename
-  - Created using `System.Windows.Forms.TextBox`
-  - Positioned at (100,Y) with 300x20 size
-- **Browse Buttons** (2): For source file and destination folder
-  - Created using `System.Windows.Forms.Button`
-  - Positioned at (410,Y) with 60x20 size
-- **Create ISO Button**
-  - Positioned at (140,150) with 100x30 size
-- **Exit Button**
-  - Positioned at (260,150) with 100x30 size
-  - Closes the application when clicked
+2. **New-IsoFile Function**:
+   - Uses `AddTree` to add a directory (typically the temporary directory containing selected files) to the ISO.
+   - Key parameters:
+     - `$Source`: Path to a directory or file(s) to include in the ISO.
+     - `$Path`: Output path for the ISO file.
+     - `$Media`: Media type (set to `DVDPLUSRW_DUALLAYER` for compatibility).
+     - `$Force`: Overwrites existing files if specified.
+   - Uses `System.CodeDom.Compiler` to compile a C# class (`ISOFile`) for low-level ISO creation.
+   - Validates item existence and logs each addition attempt.
+   - Includes error handling for empty ISO images and COM object cleanup in a `finally` block.
 
-3. **Event Handlers**
-- **Source Browse Button** (`$buttonBrowseSource.Add_Click`)
-  - Uses `System.Windows.Forms.OpenFileDialog`
-  - Sets selected file path to `$textBoxSource`
-- **Destination Browse Button** (`$buttonBrowseDestination.Add_Click`)
-  - Uses `System.Windows.Forms.FolderBrowserDialog`
-  - Sets selected folder path to `$textBoxDestination`
-- **Create ISO Button** (`$buttonCreate.Add_Click`)
-  - Validates inputs
-  - Ensures .iso extension
-  - Creates ISO using binary file operations
-  - Displays success/error messages
-- **Exit Button** (`$buttonExit.Add_Click`)
-  - Calls `$form.Close()` to exit the application
+3. **GUI Components**:
+   - Built using `System.Windows.Forms` and `System.Drawing` assemblies.
+   - Form properties:
+     - Title: "ISO Creator"
+     - Size: 600x400 pixels
+     - Fixed dialog border, centered on screen
+   - Controls:
+     - **Labels and TextBoxes**:
+       - Source: Displays selected file paths (semicolon-separated for multiple files)
+       - Destination: Folder path input
+       - File Name: ISO file name (defaults to `output.iso`)
+     - **Browse Buttons**:
+       - Source: Opens `OpenFileDialog` with `Multiselect=$true`
+       - Destination: Opens `FolderBrowserDialog`
+     - **Action Buttons**:
+       - Create ISO: Validates inputs, stages files in a temporary directory, and calls `New-IsoFile`
+       - Exit: Closes the form
 
-4. **ISO Creation Logic**
-```powershell
-$isoStream = New-Object -TypeName System.IO.FileStream -ArgumentList $isoPath, ([System.IO.FileMode]::Create), ([System.IO.FileAccess]::Write)
-$isoWriter = New-Object -TypeName System.IO.BinaryWriter -ArgumentList $isoStream
-$fileBytes = [System.IO.File]::ReadAllBytes($sourceFile.FullName)
-$isoWriter.Write($fileBytes)
-```
-- Creates a new file stream for the ISO
-- Reads source file bytes
-- Writes bytes to ISO file
-- Closes streams
+### Event Handlers
 
-## Implementation Notes
-- **Simplified ISO Creation**: Current implementation performs basic binary copying to an ISO container. Real-world use may require integration with tools like `oscdimg` for proper ISO9660/UDF formatting.
-- **Error Handling**: Uses try-catch block with message box outputs for user feedback.
-- **Input Validation**: Checks for empty fields before processing.
-- **UI Constraints**: Fixed form size and disabled maximize to ensure consistent user experience.
-- **Exit Button**: Added to provide a user-friendly way to close the application, complementing the window's close button.
+- **Source Browse Button**:
+  - Opens `OpenFileDialog` with `Multiselect=$true` to allow selecting multiple files.
+  - Joins selected file paths with semicolons for display in the Source field.
+  - Logs the action and selected file paths.
+- **Destination Browse Button**:
+  - Opens `FolderBrowserDialog` to select a folder.
+  - Logs the action and selected folder path.
+- **Create ISO Button**:
+  - Validates that all fields (Source, Destination, File Name) are non-empty.
+  - Checks if each source file exists using `Test-Path`.
+  - Creates a temporary directory in `$env:TEMP` and copies selected files to it.
+  - Calls `New-IsoFile` with the temporary directory as the source.
+  - Verifies the resulting ISO is not empty.
+  - Cleans up the temporary directory in a `finally` block.
+  - Displays success or error messages via `MessageBox`.
+  - Logs all actions, including file copying and ISO creation outcomes.
+- **Exit Button**:
+  - Closes the form and logs the action.
 
-## Extensibility
-- Add support for multiple source files
-- Integrate with proper ISO creation libraries
-- Add progress bar for large files
-- Implement volume label customization
-- Add compression options
+## Dependencies
 
-## Contribution Guidelines
-1. Fork the repository
-2. Create feature branches
-3. Submit pull requests with clear descriptions
-4. Follow PowerShell coding standards
-5. Include tests for new functionality
+- **PowerShell**: Version 5.1 or later (for Windows Forms and COM object support).
+- **.NET Framework**: Required for Windows Forms and COM interop.
+- **IMAPI2FS**: Windows COM object for ISO creation (included in Windows 10/11).
+- **System.Windows.Forms**: For GUI components.
+- **System.Drawing**: For GUI layout and sizing.
+
+## Logging
+
+- All actions are logged to `guiPS.log` in the script directory.
+- Log entries include:
+  - Application start and close
+  - Button clicks
+  - File and folder selections
+  - File copying to the temporary directory
+  - ISO creation attempts (success or failure)
+  - Temporary directory cleanup
+  - Error messages
+
+## Extending the Script
+
+### Adding New Features
+
+1. **Additional Input Validation**:
+   - Add checks for file size or specific file types in the `Create ISO` button's click event.
+   - Example: Check file size limit:
+     ```powershell
+     $sourceFiles = $txtSource.Text -split ";"
+     foreach ($file in $sourceFiles) {
+         $fileInfo = Get-Item -LiteralPath $file
+         if ($fileInfo.Length -gt 1GB) {
+             [System.Windows.Forms.MessageBox]::Show("File too large: $file", "Error", "OK", "Error")
+             Write-Log "Error: File too large: $file"
+             return
+         }
+     }
+     ```
+
+2. **Custom Media Types**:
+   - Modify the `New-IsoFile` call to allow users to select different media types via a dropdown (`ComboBox`).
+   - Example:
+     ```powershell
+     $cmbMedia = New-Object System.Windows.Forms.ComboBox
+     $cmbMedia.Items.AddRange(@('DVDPLUSR', 'DVDPLUSRW', 'DVDRAM'))
+     ```
+
+3. **Progress Feedback**:
+   - Add a progress bar or status label to show file copying and ISO creation progress.
+   - Example: Add a status label:
+     ```powershell
+     $lblStatus = New-Object System.Windows.Forms.Label
+     $lblStatus.Location = New-Object System.Drawing.Point(20,200)
+     $lblStatus.Size = New-Object System.Drawing.Size(540,20)
+     $form.Controls.Add($lblStatus)
+     ```
+
+### Modifying the GUI
+
+- **Resize or Reposition Controls**:
+  - Adjust the `Location` and `Size` properties of controls in the script.
+  - Example: To make the form larger, change `$form.Size = New-Object System.Drawing.Size(800,500)`.
+- **Add New Controls**:
+  - Add labels, textboxes, or buttons using `System.Windows.Forms` classes.
+
+### Error Handling
+
+- The script includes enhanced error handling:
+  - Validates source file existence and temporary directory creation.
+  - Checks for empty ISO files after creation.
+  - Logs errors during file copying, ISO creation, and cleanup.
+  - Cleans up COM objects and temporary directory in `finally` blocks.
+- Enhance error handling further by checking for disk space:
+  ```powershell
+  $freeSpace = (Get-PSDrive -Name ($txtDestination.Text.Substring(0,1))).Free
+  if ($freeSpace -lt 1GB) {
+      [System.Windows.Forms.MessageBox]::Show("Insufficient disk space in destination.", "Error", "OK", "Error")
+      Write-Log "Error: Insufficient disk space in destination: $($txtDestination.Text)"
+      return
+  }
+  ```
 
 ## Known Limitations
-- Basic ISO structure (no advanced filesystem features)
-- Single file input only
-- No progress feedback for large files
-- Limited ISO format customization
+
+- **Directory Support**: The script uses a temporary directory to stage files. Direct directory selection is supported only via clipboard or manual input, which includes the entire directory tree.
+- **No Progress Feedback**: The `New-IsoFile` function does not provide progress updates, which may make the GUI appear unresponsive for large ISOs.
+- **Windows-Only**: The script relies on Windows Forms and IMAPI2FS, making it incompatible with non-Windows systems.
+- **Temporary Directory**: Requires write permissions in `$env:TEMP`.
+
+## Debugging
+
+- Check the `guiPS.log` file for detailed logs of actions, file copying, ISO creation, and errors.
+- Use PowerShell's debugging tools (e.g., `Set-PSBreakpoint`) to step through the script.
+- Test the `New-IsoFile` function independently with a directory:
+  ```powershell
+  New-IsoFile -Source "C:\path\to\temp\dir" -Path "C:\path\to\output.iso" -Force
+  ```
+
+## Deployment
+
+- **Distribution**: Package the `CreateISO.ps1` script with the documentation files (`README.md`, `user_guide.md`, `developers.md`).
+- **Execution Policy**: Ensure users have the appropriate PowerShell execution policy:
+  ```powershell
+  Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+  ```
+- **Dependencies**: No external dependencies beyond Windows and PowerShell are required.
+
+## Contributing
+
+- Fork the repository and submit pull requests for improvements.
+- Suggested improvements:
+  - Add support for selecting both files and folders in the source dialog.
+  - Implement a progress bar for file copying and ISO creation.
+  - Add configuration options for media types or volume names.# ISO Creator GUI Developer Guide
+
+This document provides detailed technical information about the `CreateISO.ps1` PowerShell script for developers who want to understand, modify, or extend the application.
+
+## Overview
+
+The ISO Creator GUI is a PowerShell script that uses Windows Forms to create a graphical interface for generating ISO files from one or more selected files. It stages the selected files in a temporary directory and uses the `New-IsoFile` function to create ISO images compatible with Windows 11 using the IMAPI2FS COM object.
+
+## Script Structure
+
+### Key Components
+
+1. **Logging Function**:
+   - `Write-Log`: Writes timestamped messages to `guiPS.log` in the script's directory.
+   - Usage: `Write-Log "Message"`
+   - File path: Determined by `Join-Path $PSScriptRoot "guiPS.log"`
+
+2. **New-IsoFile Function**:
+   - Uses `AddTree` to add a directory (typically the temporary directory containing selected files) to the ISO.
+   - Key parameters:
+     - `$Source`: Path to a directory or file(s) to include in the ISO.
+     - `$Path`: Output path for the ISO file.
+     - `$Media`: Media type (set to `DVDPLUSRW_DUALLAYER` for compatibility).
+     - `$Force`: Overwrites existing files if specified.
+   - Uses `System.CodeDom.Compiler` to compile a C# class (`ISOFile`) for low-level ISO creation.
+   - Validates item existence and logs each addition attempt.
+   - Includes error handling for empty ISO images and COM object cleanup in a `finally` block.
+
+3. **GUI Components**:
+   - Built using `System.Windows.Forms` and `System.Drawing` assemblies.
+   - Form properties:
+     - Title: "ISO Creator"
+     - Size: 600x400 pixels
+     - Fixed dialog border, centered on screen
+   - Controls:
+     - **Labels and TextBoxes**:
+       - Source: Displays selected file paths (semicolon-separated for multiple files)
+       - Destination: Folder path input
+       - File Name: ISO file name (defaults to `output.iso`)
+     - **Browse Buttons**:
+       - Source: Opens `OpenFileDialog` with `Multiselect=$true`
+       - Destination: Opens `FolderBrowserDialog`
+     - **Action Buttons**:
+       - Create ISO: Validates inputs, stages files in a temporary directory, and calls `New-IsoFile`
+       - Exit: Closes the form
+
+### Event Handlers
+
+- **Source Browse Button**:
+  - Opens `OpenFileDialog` with `Multiselect=$true` to allow selecting multiple files.
+  - Joins selected file paths with semicolons for display in the Source field.
+  - Logs the action and selected file paths.
+- **Destination Browse Button**:
+  - Opens `FolderBrowserDialog` to select a folder.
+  - Logs the action and selected folder path.
+- **Create ISO Button**:
+  - Validates that all fields (Source, Destination, File Name) are non-empty.
+  - Checks if each source file exists using `Test-Path`.
+  - Creates a temporary directory in `$env:TEMP` and copies selected files to it.
+  - Calls `New-IsoFile` with the temporary directory as the source.
+  - Verifies the resulting ISO is not empty.
+  - Cleans up the temporary directory in a `finally` block.
+  - Displays success or error messages via `MessageBox`.
+  - Logs all actions, including file copying and ISO creation outcomes.
+- **Exit Button**:
+  - Closes the form and logs the action.
+
+## Dependencies
+
+- **PowerShell**: Version 5.1 or later (for Windows Forms and COM object support).
+- **.NET Framework**: Required for Windows Forms and COM interop.
+- **IMAPI2FS**: Windows COM object for ISO creation (included in Windows 10/11).
+- **System.Windows.Forms**: For GUI components.
+- **System.Drawing**: For GUI layout and sizing.
+
+## Logging
+
+- All actions are logged to `guiPS.log` in the script directory.
+- Log entries include:
+  - Application start and close
+  - Button clicks
+  - File and folder selections
+  - File copying to the temporary directory
+  - ISO creation attempts (success or failure)
+  - Temporary directory cleanup
+  - Error messages
+
+## Extending the Script
+
+### Adding New Features
+
+1. **Additional Input Validation**:
+   - Add checks for file size or specific file types in the `Create ISO` button's click event.
+   - Example: Check file size limit:
+     ```powershell
+     $sourceFiles = $txtSource.Text -split ";"
+     foreach ($file in $sourceFiles) {
+         $fileInfo = Get-Item -LiteralPath $file
+         if ($fileInfo.Length -gt 1GB) {
+             [System.Windows.Forms.MessageBox]::Show("File too large: $file", "Error", "OK", "Error")
+             Write-Log "Error: File too large: $file"
+             return
+         }
+     }
+     ```
+
+2. **Custom Media Types**:
+   - Modify the `New-IsoFile` call to allow users to select different media types via a dropdown (`ComboBox`).
+   - Example:
+     ```powershell
+     $cmbMedia = New-Object System.Windows.Forms.ComboBox
+     $cmbMedia.Items.AddRange(@('DVDPLUSR', 'DVDPLUSRW', 'DVDRAM'))
+     ```
+
+3. **Progress Feedback**:
+   - Add a progress bar or status label to show file copying and ISO creation progress.
+   - Example: Add a status label:
+     ```powershell
+     $lblStatus = New-Object System.Windows.Forms.Label
+     $lblStatus.Location = New-Object System.Drawing.Point(20,200)
+     $lblStatus.Size = New-Object System.Drawing.Size(540,20)
+     $form.Controls.Add($lblStatus)
+     ```
+
+### Modifying the GUI
+
+- **Resize or Reposition Controls**:
+  - Adjust the `Location` and `Size` properties of controls in the script.
+  - Example: To make the form larger, change `$form.Size = New-Object System.Drawing.Size(800,500)`.
+- **Add New Controls**:
+  - Add labels, textboxes, or buttons using `System.Windows.Forms` classes.
+
+### Error Handling
+
+- The script includes enhanced error handling:
+  - Validates source file existence and temporary directory creation.
+  - Checks for empty ISO files after creation.
+  - Logs errors during file copying, ISO creation, and cleanup.
+  - Cleans up COM objects and temporary directory in `finally` blocks.
+- Enhance error handling further by checking for disk space:
+  ```powershell
+  $freeSpace = (Get-PSDrive -Name ($txtDestination.Text.Substring(0,1))).Free
+  if ($freeSpace -lt 1GB) {
+      [System.Windows.Forms.MessageBox]::Show("Insufficient disk space in destination.", "Error", "OK", "Error")
+      Write-Log "Error: Insufficient disk space in destination: $($txtDestination.Text)"
+      return
+  }
+  ```
+
+## Known Limitations
+
+- **Directory Support**: The script uses a temporary directory to stage files. Direct directory selection is supported only via clipboard or manual input, which includes the entire directory tree.
+- **No Progress Feedback**: The `New-IsoFile` function does not provide progress updates, which may make the GUI appear unresponsive for large ISOs.
+- **Windows-Only**: The script relies on Windows Forms and IMAPI2FS, making it incompatible with non-Windows systems.
+- **Temporary Directory**: Requires write permissions in `$env:TEMP`.
+
+## Debugging
+
+- Check the `guiPS.log` file for detailed logs of actions, file copying, ISO creation, and errors.
+- Use PowerShell's debugging tools (e.g., `Set-PSBreakpoint`) to step through the script.
+- Test the `New-IsoFile` function independently with a directory:
+  ```powershell
+  New-IsoFile -Source "C:\path\to\temp\dir" -Path "C:\path\to\output.iso" -Force
+  ```
+
+## Deployment
+
+- **Distribution**: Package the `CreateISO.ps1` script with the documentation files (`README.md`, `user_guide.md`, `developers.md`).
+- **Execution Policy**: Ensure users have the appropriate PowerShell execution policy:
+  ```powershell
+  Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+  ```
+- **Dependencies**: No external dependencies beyond Windows and PowerShell are required.
+
+## Contributing
+
+- Fork the repository and submit pull requests for improvements.
+- Suggested improvements:
+  - Add support for selecting both files and folders in the source dialog.
+  - Implement a progress bar for file copying and ISO creation.
+  - Add configuration options for media types or volume names.
