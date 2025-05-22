@@ -20,7 +20,7 @@ Write-Log "Application started"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-# New-IsoFile function (modified to use temporary directory for file staging)
+# New-IsoFile function (uses temporary directory for file staging)
 function New-IsoFile {
     [CmdletBinding(DefaultParameterSetName='Source')]Param(
         [parameter(Position=1,Mandatory=$true,ValueFromPipeline=$true, ParameterSetName='Source')]$Source,
@@ -216,25 +216,43 @@ $form.Controls.Add($txtFileName)
 # Create ISO Button
 $btnCreateISO = New-Object System.Windows.Forms.Button
 $btnCreateISO.Location = New-Object System.Drawing.Point(100,150)
-$btnCreateISO.Size = New-Object System.Drawing.Size(100,30)
+$btnCreateISO.Size = New-Object System.Drawing.Size(80,30)
 $btnCreateISO.Text = "Create ISO"
 $btnCreateISO.Add_Click({
     Write-Log "Create ISO button clicked"
     
+    # Initialize progress bar and status label
+    $progressBar.Value = 0
+    $progressBar.Visible = $true
+    $lblStatus.Text = "Initializing..."
+    $lblStatus.Visible = $true
+    $form.Refresh()
+    Write-Log "Progress bar and status label initialized"
+
+    # Define progress stages (5 stages: validation, create temp dir, copy files, create ISO, verify/cleanup)
+    $totalStages = 5
+    $stageIncrement = 100 / $totalStages
+
     # Validate inputs
     if (-not $txtSource.Text) {
         [System.Windows.Forms.MessageBox]::Show("Please specify at least one source file.", "Error", "OK", "Error")
         Write-Log "Error: Source file(s) not specified"
+        $progressBar.Visible = $false
+        $lblStatus.Visible = $false
         return
     }
     if (-not $txtDestination.Text) {
         [System.Windows.Forms.MessageBox]::Show("Please specify a destination folder.", "Error", "OK", "Error")
         Write-Log "Error: Destination folder not specified"
+        $progressBar.Visible = $false
+        $lblStatus.Visible = $false
         return
     }
     if (-not $txtFileName.Text) {
         [System.Windows.Forms.MessageBox]::Show("Please specify a file name.", "Error", "OK", "Error")
         Write-Log "Error: File name not specified"
+        $progressBar.Visible = $false
+        $lblStatus.Visible = $false
         return
     }
 
@@ -244,9 +262,15 @@ $btnCreateISO.Add_Click({
         if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
             [System.Windows.Forms.MessageBox]::Show("Source file does not exist: $file", "Error", "OK", "Error")
             Write-Log "Error: Source file does not exist: $file"
+            $progressBar.Visible = $false
+            $lblStatus.Visible = $false
             return
         }
     }
+    $progressBar.Value = [math]::Min($progressBar.Value + $stageIncrement, 100)
+    $lblStatus.Text = "Validating inputs..."
+    Write-Log "Progress: Validation complete ($($progressBar.Value)%, Status: $($lblStatus.Text))"
+    $form.Refresh()
 
     # Ensure .iso extension
     $isoName = $txtFileName.Text
@@ -259,6 +283,10 @@ $btnCreateISO.Add_Click({
         $tempDir = Join-Path $env:TEMP "ISOCreator_$(Get-Date -Format 'yyyyMMddHHmmss')"
         Write-Log "Creating temporary directory: $tempDir"
         New-Item -Path $tempDir -ItemType Directory -Force | Out-Null
+        $progressBar.Value = [math]::Min($progressBar.Value + $stageIncrement, 100)
+        $lblStatus.Text = "Creating temporary directory..."
+        Write-Log "Progress: Temporary directory created ($($progressBar.Value)%, Status: $($lblStatus.Text))"
+        $form.Refresh()
 
         # Copy selected files to temporary directory
         foreach ($file in $sourceFiles) {
@@ -270,10 +298,19 @@ $btnCreateISO.Add_Click({
                 throw "Failed to copy file to temporary directory: $file"
             }
         }
+        $progressBar.Value = [math]::Min($progressBar.Value + $stageIncrement, 100)
+        $lblStatus.Text = "Copying files..."
+        Write-Log "Progress: Files copied to temporary directory ($($progressBar.Value)%, Status: $($lblStatus.Text))"
+        $form.Refresh()
 
         Write-Log "Creating ISO with Source: $tempDir, Destination: $($txtDestination.Text), FileName: $isoName"
         $isoPath = Join-Path $txtDestination.Text $isoName
+        $lblStatus.Text = "Generating ISO..."
+        $form.Refresh()
         New-IsoFile -Source $tempDir -Path $isoPath -Force
+        $progressBar.Value = [math]::Min($progressBar.Value + $stageIncrement, 100)
+        Write-Log "Progress: ISO created ($($progressBar.Value)%, Status: $($lblStatus.Text))"
+        $form.Refresh()
 
         # Verify ISO size
         $isoFile = Get-Item -LiteralPath $isoPath -ErrorAction SilentlyContinue
@@ -281,6 +318,8 @@ $btnCreateISO.Add_Click({
             throw "Created ISO file is empty: $isoPath"
         }
 
+        $lblStatus.Text = "Verifying ISO..."
+        $form.Refresh()
         [System.Windows.Forms.MessageBox]::Show("ISO created successfully at $isoPath", "Success", "OK", "Information")
         Write-Log "ISO created successfully at $isoPath"
     } catch {
@@ -292,20 +331,66 @@ $btnCreateISO.Add_Click({
             Write-Log "Cleaning up temporary directory: $tempDir"
             Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
         }
+        $progressBar.Value = 100
+        $lblStatus.Text = "Cleaning up..."
+        Write-Log "Progress: Cleanup complete ($($progressBar.Value)%, Status: $($lblStatus.Text))"
+        $progressBar.Visible = $false
+        $lblStatus.Visible = $false
+        $form.Refresh()
     }
 })
 $form.Controls.Add($btnCreateISO)
 
+# View Log Button
+$btnViewLog = New-Object System.Windows.Forms.Button
+$btnViewLog.Location = New-Object System.Drawing.Point(190,150)
+$btnViewLog.Size = New-Object System.Drawing.Size(80,30)
+$btnViewLog.Text = "View Log"
+$btnViewLog.Add_Click({
+    Write-Log "View Log button clicked"
+    if (Test-Path -LiteralPath $LogFile -PathType Leaf) {
+        try {
+            Start-Process -FilePath $LogFile
+            Write-Log "Opened log file: $LogFile"
+        } catch {
+            [System.Windows.Forms.MessageBox]::Show("Failed to open log file: $($_.Exception.Message)", "Error", "OK", "Error")
+            Write-Log "Error opening log file: $($_.Exception.Message)"
+        }
+    } else {
+        [System.Windows.Forms.MessageBox]::Show("Log file does not exist: $LogFile", "Error", "OK", "Error")
+        Write-Log "Error: Log file does not exist: $LogFile"
+    }
+})
+$form.Controls.Add($btnViewLog)
+
 # Exit Button
 $btnExit = New-Object System.Windows.Forms.Button
-$btnExit.Location = New-Object System.Drawing.Point(220,150)
-$btnExit.Size = New-Object System.Drawing.Size(100,30)
+$btnExit.Location = New-Object System.Drawing.Point(280,150)
+$btnExit.Size = New-Object System.Drawing.Size(80,30)
 $btnExit.Text = "Exit"
 $btnExit.Add_Click({
     Write-Log "Exit button clicked"
     $form.Close()
 })
 $form.Controls.Add($btnExit)
+
+# Progress Bar
+$progressBar = New-Object System.Windows.Forms.ProgressBar
+$progressBar.Location = New-Object System.Drawing.Point(100,190)
+$progressBar.Size = New-Object System.Drawing.Size(260,20)
+$progressBar.Minimum = 0
+$progressBar.Maximum = 100
+$progressBar.Value = 0
+$progressBar.Visible = $false
+$form.Controls.Add($progressBar)
+
+# Status Label
+$lblStatus = New-Object System.Windows.Forms.Label
+$lblStatus.Location = New-Object System.Drawing.Point(100,215)
+$lblStatus.Size = New-Object System.Drawing.Size(260,20)
+$lblStatus.Text = ""
+$lblStatus.Visible = $false
+$form.Controls.Add($lblStatus)
 
 # Show the form
 $form.Add_Shown({$form.Activate()})
