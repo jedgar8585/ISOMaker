@@ -13,7 +13,10 @@ This application provides a user-friendly graphical interface to create ISO file
 - **Folder Selection**: Browse button for selecting the destination folder.
 - **ISO Creation**: Generates ISO files using the IMAPI2FS COM object, including only the selected files.
 - **Input Validation**: Ensures all required fields are filled, source files exist, and the ISO is not empty.
-- **Logging**: All actions, including file copying and ISO creation, are logged to `H:\Personal\Code\Logs\guiPS.log`.
+- **Progress Bar**: Displays progress during ISO creation, including validation, file copying, ISO generation, and cleanup.
+- **Status Label**: Shows the current stage (e.g., "Copying files...") below the progress bar during ISO creation.
+- **View Log Button**: Allows users to open the log file (`H:\Personal\Code\Logs\guiPS.log`) in the default text editor.
+- **Logging**: All actions, including file copying, ISO creation, progress updates, and button clicks, are logged to `H:\Personal\Code\Logs\guiPS.log`.
 - **Temporary Directory**: Uses a temporary directory to stage files, ensuring reliable inclusion in the ISO.
 
 ## Prerequisites
@@ -40,7 +43,8 @@ This application provides a user-friendly graphical interface to create ISO file
    - Select one or more source files using the "Browse" button (hold Ctrl to select multiple files).
    - Choose a destination folder using the "Browse" button.
    - Enter a file name for the ISO (defaults to `output.iso`).
-   - Click "Create ISO" to generate the ISO file.
+   - Click "Create ISO" to generate the ISO file; the progress bar and status label will show the creation stages.
+   - Click "View Log" to open the log file in the default text editor.
    - Click "Exit" to close the application.
 
 ## Documentation
@@ -50,7 +54,7 @@ This application provides a user-friendly graphical interface to create ISO file
 
 ## Logging
 
-All actions (e.g., button clicks, file selections, file copying, ISO creation, and errors) are logged to `H:\Personal\Code\Logs\guiPS.log`.
+All actions (e.g., button clicks, file selections, file copying, ISO creation, progress updates, and errors) are logged to `H:\Personal\Code\Logs\guiPS.log`.
 
 ## License
 
