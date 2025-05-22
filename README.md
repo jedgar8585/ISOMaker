@@ -56,6 +56,3 @@ This application provides a user-friendly graphical interface to create ISO file
 
 All actions (e.g., button clicks, file selections, file copying, ISO creation, progress updates, and errors) are logged to `H:\Personal\Code\Logs\guiPS.log`.
 
-## License
-
-MIT License
