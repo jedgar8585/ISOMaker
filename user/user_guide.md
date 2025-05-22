@@ -16,18 +16,18 @@ The ISO Creator GUI is a PowerShell-based application that allows users to creat
 ## Getting Started
 
 1. **Download the Script**:
-   - Obtain the `CreateISO.ps1` script from the repository or distribution source.
+   - Obtain the `guiISO.ps1` script from the repository or distribution source.
    - Place it in a directory where you have write permissions.
 
 2. **Run the Application**:
    - Open PowerShell (run as administrator if necessary).
-   - Navigate to the directory containing `CreateISO.ps1`:
+   - Navigate to the directory containing `guiISO.ps1`:
      ```powershell
      cd path\to\script\directory
      ```
    - Execute the script:
      ```powershell
-     .\CreateISO.ps1
+     .\guiISO.ps1
      ```
    - The GUI window will appear.
 
