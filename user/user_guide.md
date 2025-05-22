@@ -4,7 +4,7 @@ This guide provides step-by-step instructions for using the ISO Creator GUI appl
 
 ## Introduction
 
-The ISO Creator GUI is a PowerShell-based application that allows users to create ISO files from one or more selected files. The application stages the selected files in a temporary directory to ensure reliable inclusion in the ISO, which is mountable on Windows 11 systems.
+The ISO Creator GUI is a PowerShell-based application that allows users to create ISO files from one or more selected files. The application stages the selected files in a temporary directory to ensure reliable inclusion in the ISO, which is mountable on Windows 11 systems. A progress bar and status label display the stages of the ISO creation process, and a "View Log" button allows users to access the log file directly.
 
 ## Prerequisites
 
@@ -16,18 +16,18 @@ The ISO Creator GUI is a PowerShell-based application that allows users to creat
 ## Getting Started
 
 1. **Download the Script**:
-   - Obtain the `guiISO.ps1` script from the repository or distribution source.
+   - Obtain the `CreateISO.ps1` script from the repository or distribution source.
    - Place it in a directory where you have write permissions.
 
 2. **Run the Application**:
    - Open PowerShell (run as administrator if necessary).
-   - Navigate to the directory containing `guiISO.ps1`:
+   - Navigate to the directory containing `CreateISO.ps1`:
      ```powershell
      cd path\to\script\directory
      ```
    - Execute the script:
      ```powershell
-     .\guiISO.ps1
+     .\CreateISO.ps1
      ```
    - The GUI window will appear.
 
@@ -41,7 +41,10 @@ The GUI consists of:
 - **File Name Field**: Specifies the name of the output ISO file (e.g., `myimage.iso`).
 - **Browse Buttons**: Allow selection of source files and destination folder.
 - **Create ISO Button**: Initiates the ISO creation process.
+- **View Log Button**: Opens the log file (`H:\Personal\Code\Logs\guiPS.log`) in the default text editor.
 - **Exit Button**: Closes the application.
+- **Progress Bar**: Displays progress during ISO creation, visible only when the "Create ISO" button is clicked.
+- **Status Label**: Shows the current stage (e.g., "Copying files...") below the progress bar, visible only during ISO creation.
 
 ### Steps to Create an ISO
 
@@ -65,6 +68,13 @@ The GUI consists of:
 
 4. **Create the ISO**:
    - Click the "Create ISO" button.
+   - The progress bar and status label will appear below the buttons, updating through the following stages:
+     - "Validating inputs..." (checking source files, destination, and file name)
+     - "Creating temporary directory..." (setting up a staging directory)
+     - "Copying files..." (copying selected files to the temporary directory)
+     - "Generating ISO..." (creating the ISO file)
+     - "Verifying ISO..." (checking the ISO size)
+     - "Cleaning up..." (removing temporary files)
    - The application will validate the inputs:
      - If no source files are selected, an error message will appear.
      - If any source file does not exist, an error message will specify the missing file.
@@ -72,17 +82,22 @@ The GUI consists of:
      - Ensure all fields are filled correctly and all source files exist.
    - The selected files are copied to a temporary directory before being added to the ISO.
    - The ISO will include only the selected files.
-   - If successful, a message will confirm the ISO was created at the specified location.
-   - If an error occurs (e.g., empty ISO), an error message will display the issue.
+   - If successful, a message will confirm the ISO was created at the specified location, and the progress bar and status label will disappear.
+   - If an error occurs (e.g., empty ISO), an error message will display the issue, and the progress bar and status label will disappear.
 
-5. **Exit the Application**:
+5. **View the Log**:
+   - Click the "View Log" button to open the log file (`H:\Personal\Code\Logs\guiPS.log`) in the default text editor (e.g., Notepad).
+   - If the log file does not exist, an error message will appear.
+   - Use this to review actions, errors, or progress details during or after ISO creation.
+
+6. **Exit the Application**:
    - Click the "Exit" button to close the GUI.
 
 ## Checking the Log
 
 - The application logs all actions to `H:\Personal\Code\Logs\guiPS.log`.
 - The log directory is automatically created if it does not exist.
-- Open the log file in a text editor to review actions, such as button clicks, file selections, file copying, ISO creation, and any errors.
+- Use the "View Log" button to open the log file directly, or open it manually in a text editor to review actions, such as button clicks, file selections, file copying, ISO creation, progress updates, status changes, and any errors.
 
 ## Troubleshooting
 
@@ -90,7 +105,7 @@ The GUI consists of:
   - Verify that the selected files exist and are accessible.
   - Reselect the files using the "Browse" button.
 - **Error: "Created ISO file is empty..."**:
-  - Check the `H:\Personal\Code\Logs\guiPS.log` file for details on file copying or ISO creation errors.
+  - Check the log file (`H:\Personal\Code\Logs\guiPS.log`) for details on file copying or ISO creation errors.
   - Ensure the selected files are not locked by another process.
   - Try selecting different files or a different destination path.
 - **Error: "Cannot create file..."**:
@@ -105,6 +120,12 @@ The GUI consists of:
 - **Logging Issues**:
   - Ensure write permissions in `H:\Personal\Code\Logs`.
   - Check the log for errors related to file copying or ISO creation.
+- **Progress Bar or Status Label Issues**:
+  - If the progress bar or status label does not update, check the log for errors at each stage.
+  - Ensure the selected files are accessible and not excessively large, as the ISO creation step may take longer.
+- **View Log Issues**:
+  - If clicking "View Log" shows an error, verify that `H:\Personal\Code\Logs\guiPS.log` exists and is accessible.
+  - Check the log file for details on why it could not be opened (e.g., permissions issues).
 
 ## Support
 
